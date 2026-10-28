@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { KEEP, listText, statusOf } from './register'
+import { KEEP, listText, noteLoad, statusOf } from './register'
 
 // Each test stands for the engine beneath the plugin: it answers
 // `skill.prompt` with the skill's text, records `$.ui.status`, and reads what
@@ -8,7 +8,7 @@ import { KEEP, listText, statusOf } from './register'
 
 type On = Parameters<Parameters<typeof test>[1]>[1]
 
-const world = (on: On, opts: { statusFails?: boolean } = {}) => {
+const world = (on: On, opts: { statusFails?: boolean; deny?: RegExp; errorOn?: RegExp } = {}) => {
   const statuses: (string | undefined)[] = []
   on('skill.prompt', (_, e) => ({ text: e.text }))
   on('ui.status', (_, e) => {
@@ -17,6 +17,12 @@ const world = (on: On, opts: { statusFails?: boolean } = {}) => {
     return { value: undefined }
   })
   on('command.register', () => ({ value: { command: 'skills-used' } }))
+  on('tool.call', (_, e) => {
+    const t = JSON.stringify(e)
+    if (opts.deny?.test(t)) return { deny: 'blocked by a rule' }
+    if (opts.errorOn?.test(t)) return { result: 'Unknown skill.', isError: true }
+    return { result: {} }
+  })
   return { statuses }
 }
 
@@ -68,4 +74,39 @@ test('listText keeps the order of loads, oldest first', () => {
   ])
   expect(text.indexOf('first')).toBeLessThan(text.indexOf('second'))
   expect(KEEP).toBe(200)
+})
+
+test('a Skill tool call the engine passed by is still noted (0.1.1)', async ($, on) => {
+  const { statuses } = world(on)
+  await $.tool.call({ tool: 'Skill', skill: 'icm-ops:icm-verifier', args: 'check' })
+  expect(statuses.at(-1)).toBe('skill: icm-ops:icm-verifier (1 this session)')
+  const r = await $.command.run({ command: 'skills-used', args: '' })
+  expect(r.text).toContain('icm-ops:icm-verifier  (Skill tool)')
+})
+
+test('one load seen at both doors is one row, the engine note kept', async ($, on) => {
+  world(on)
+  await $.skill.prompt({ skill: 'icm-verifier', text: 'a', source: 'plugin', pluginName: 'icm-ops' })
+  await $.tool.call({ tool: 'Skill', skill: 'icm-ops:icm-verifier' })
+  const r = await $.command.run({ command: 'skills-used', args: '' })
+  expect(r.text).toContain('1 loads of 1 skills')
+  expect(r.text).toContain('icm-verifier  (plugin icm-ops)')
+})
+
+test('a refused or failed Skill call and other tools are not noted', async ($, on) => {
+  world(on, { deny: /secret/, errorOn: /nosuch/ })
+  await $.tool.call({ tool: 'Skill', skill: 'secret' })
+  await $.tool.call({ tool: 'Skill', skill: 'nosuch' })
+  await $.tool.call({ tool: 'Bash', command: 'ls' })
+  const r = await $.command.run({ command: 'skills-used', args: '' })
+  expect(r.text).toBe('No skill loaded yet in this session.')
+})
+
+test('noteLoad: a tool note is replaced by a later engine note, and loads a minute apart stay two', () => {
+  const tool = { at: '2026-10-28T09:00:00Z', skill: 'p:x', source: 'Skill tool' }
+  const eng = { at: '2026-10-28T09:00:01Z', skill: 'x', source: 'plugin', plugin: 'p' }
+  expect(noteLoad([tool], eng)).toEqual([eng])
+  expect(noteLoad([eng], { ...tool, at: '2026-10-28T09:00:02Z' })).toEqual([eng])
+  const later = { ...eng, at: '2026-10-28T09:01:02Z' }
+  expect(noteLoad([eng], later).length).toBe(2)
 })

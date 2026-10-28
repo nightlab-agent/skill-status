@@ -13,6 +13,13 @@ import type { Use } from '../types'
 // so what shows is what the model really read. The newest skill shows in the
 // status line with the session's count; /skills-used lists every load.
 //
+// 0.1.1: on a host where another plugin's hook runs first and sends
+// `skill.prompt` on past this one (seen live 2026-10-28: "cc-plugin-sec-default
+// runs first and sent the event on past it"), a load called through the Skill
+// tool is still noted at `tool.call`, when the call succeeded. A load noted at
+// both within SAME_LOAD_MS is one row, the `skill.prompt` one kept. A typed
+// `/name` that is passed by has no second door and stays unseen.
+//
 // DESIGN NOTE, deliberately narrow: it passes the skill's text on unchanged,
 // never denies, never reads a skill's file, never touches the network, writes
 // no file. Every failure of its own is swallowed: an indicator that breaks a
@@ -21,6 +28,10 @@ import type { Use } from '../types'
 const COMMAND = 'skills-used'
 /** Loads kept in the session's state. */
 export const KEEP = 200
+/** Notes of one skill this close together are one load. */
+export const SAME_LOAD_MS = 60_000
+/** Where a load noted only at the Skill tool call says it came from. */
+export const VIA_TOOL = 'Skill tool'
 
 // Change the tag when Use's fields change: it declines what an earlier version stored.
 const uses = atom({ plugin: 'skill-status', key: 'uses' } as const, [] as Use[], { shape: 'uses-1' })
@@ -31,6 +42,18 @@ export const statusOf = (all: Use[]) => {
   if (!last) return undefined
   const count = new Set(all.map(x => x.skill)).size
   return `skill: ${last.skill} (${count} this session)`.slice(0, 80)
+}
+
+const bare = (name: string) => name.slice(name.lastIndexOf(':') + 1)
+
+/** Adds one note to the list: a second note of the newest skill within SAME_LOAD_MS is the same load. */
+export const noteLoad = (all: Use[], use: Use): Use[] => {
+  const last = all.at(-1)
+  if (last && bare(last.skill) === bare(use.skill) && Math.abs(Date.parse(use.at) - Date.parse(last.at)) <= SAME_LOAD_MS) {
+    // the engine's own note says more (its source, its plugin); a tool note never replaces it
+    return last.source === VIA_TOOL && use.source !== VIA_TOOL ? [...all.slice(0, -1), use] : all
+  }
+  return [...all, use].slice(-KEEP)
 }
 
 const hms = (iso: string) => {
@@ -70,7 +93,7 @@ export const register: Register = on => {
         source: String(e.source),
         ...(e.pluginName ? { plugin: e.pluginName } : {}),
       }
-      const all = await update($, uses, xs => [...xs, use].slice(-KEEP))
+      const all = await update($, uses, xs => noteLoad(xs, use))
       try {
         $.ui.status(statusOf(all))
       } catch {
@@ -78,6 +101,25 @@ export const register: Register = on => {
       }
     } catch {
       // the indicator misses one load; the skill's text is untouched
+    }
+    return r
+  })
+
+  on('tool.call', async ($, e, next) => {
+    const r = await next(e)
+    if (e.tool !== 'Skill' || r.deny !== undefined || r.isError === true) return r
+    try {
+      const name = (e as unknown as Record<string, unknown>).skill
+      if (typeof name !== 'string' || !name) return r
+      const use: Use = { at: new Date().toISOString(), skill: name.replace(/^\//, ''), source: VIA_TOOL }
+      const all = await update($, uses, xs => noteLoad(xs, use))
+      try {
+        $.ui.status(statusOf(all))
+      } catch {
+        // a surface with no status line
+      }
+    } catch {
+      // the indicator misses one load; the call's result is untouched
     }
     return r
   })

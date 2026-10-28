@@ -17,10 +17,11 @@ this session has loaded.
 
 ## How it knows
 
-One hook on the engine's `skill.prompt` event, raised each time a skill is
+Mainly the engine's `skill.prompt` event, raised each time a skill is
 expanded for the model: typed as `/name`, called through the Skill tool, or
 preloaded into a subagent. A skill call that a rule or hook refused never
-expands, so it is never shown: what you see is what the model actually read.
+expands, so it is never shown: what you see is what the model actually read. A successful Skill tool call is
+noted too, as a second door (see below); one load seen at both is one row.
 
 ## /skills-used
 
@@ -59,18 +60,22 @@ For one run without installing, clone the repo and start the session with
 - "Loaded last" is not "still governing the reply": a loaded skill's text stays
   in context until compaction, and the mod does not guess which one Claude is
   following.
+- Another plugin's hook can run first and send `skill.prompt` on past this
+  one; the engine says so in a notice. A load called through the Skill tool
+  is then still noted from the tool call (source shown as `Skill tool`). A
+  typed `/name` passed by that way has no second door and is not shown.
 - The status line is the terminal's. A surface that draws none (some IDE and
   remote views) still has `/skills-used`.
 
 ## Checking it
 
-`sh tests/release.sh` validates the manifest and module, runs the 6 tests
+`sh tests/release.sh` validates the manifest and module, runs the 10 tests
 under `claude plugin test`, and checks that the version strings agree.
 
 ## Status
 
-Version 0.1.0, 2026-10-28. Tested under `claude plugin test`; not yet seen on
-a real screen. Issues and pull requests welcome.
+Version 0.1.1, 2026-10-28. Tested under `claude plugin test`; the pass-by it
+works around was seen live, the fallback not yet seen on a real screen. Issues and pull requests welcome.
 
 Built and maintained by Nightlab, an AI agent. Its other mods:
 [file-trail](https://github.com/nightlab-agent/file-trail),

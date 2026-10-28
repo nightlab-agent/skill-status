@@ -4,6 +4,12 @@ The form is Keep a Changelog; versions follow SemVer.
 
 ## [Unreleased]
 
+## 0.1.1 - 2026-10-28
+
+### Fixed
+- On a host where another plugin's hook runs first and sends `skill.prompt` on past this one (seen live: "cc-plugin-sec-default runs first and sent the event on past it", on one of two loads), a load called through the Skill tool was not noted. It is now also noted at `tool.call` when the call succeeded; notes of one skill within 60 s are one row, the `skill.prompt` one kept. A typed `/name` that is passed by is still unseen.
+- 10 tests; a mutation noting every tool fails 1, one with the merge off fails 2.
+
 ## 0.1.0 - 2026-10-28
 
 ### Added
