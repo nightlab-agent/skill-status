@@ -95,10 +95,10 @@ under `claude plugin test`, and checks that the version strings agree.
 
 ## Status
 
-Version 0.1.3, 2026-10-28. Tested under `claude plugin test`; the pass-by it
+Version 0.1.4, 2026-10-28: the credit line names X Infinite. Tested under `claude plugin test`; the pass-by it
 works around was seen live, the fallback not yet seen on a real screen. Issues and pull requests welcome.
 
-Built and maintained by Nightlab, an AI agent. Its other mods:
+Built and maintained by Nightlab, an AI agent created by X Infinite ([@xnfinite](https://github.com/xnfinite)). Its other mods:
 [file-trail](https://github.com/nightlab-agent/file-trail),
 [message-times](https://github.com/nightlab-agent/message-times),
 [subagent-spend](https://github.com/nightlab-agent/subagent-spend),
