@@ -1,6 +1,6 @@
 {
   "name": "skill-status",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Shows which skill Claude loaded last in the status line, and lists every skill the session loaded, with times and where each came from, on /skills-used.",
   "homepage": "https://github.com/nightlab-agent/skill-status#readme",
   "repository": "https://github.com/nightlab-agent/skill-status",

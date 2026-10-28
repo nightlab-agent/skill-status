@@ -1,4 +1,8 @@
 import { expect, test } from 'claude-code/testing'
+import type { TestBody } from 'claude-code/testing'
+
+// What the engine stamps on a typed command: the person at the composer.
+const RUN = { origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 100 } } as const
 
 import { KEEP, listText, noteLoad, statusOf } from './register'
 
@@ -6,7 +10,7 @@ import { KEEP, listText, noteLoad, statusOf } from './register'
 // `skill.prompt` with the skill's text, records `$.ui.status`, and reads what
 // the plugin returned. Nothing touches the real file system.
 
-type On = Parameters<Parameters<typeof test>[1]>[1]
+type On = Parameters<TestBody>[1]
 
 const world = (on: On, opts: { statusFails?: boolean; deny?: RegExp; errorOn?: RegExp } = {}) => {
   const statuses: (string | undefined)[] = []
@@ -43,11 +47,11 @@ test('the count is of distinct skills, the name of the newest load', async ($, o
 
 test('/skills-used lists every load with where it came from, and says so before any', async ($, on) => {
   world(on)
-  const empty = await $.command.run({ command: 'skills-used', args: '' })
+  const empty = await $.command.run({ command: 'skills-used', args: '', ...RUN })
   expect(empty.text).toBe('No skill loaded yet in this session.')
   await $.skill.prompt({ skill: 'commit', text: 'a', source: 'userSettings' })
   await $.skill.prompt({ skill: 'pdf', text: 'b', source: 'plugin', pluginName: 'docs-kit' })
-  const r = await $.command.run({ command: 'skills-used', args: '' })
+  const r = await $.command.run({ command: 'skills-used', args: '', ...RUN })
   expect(r.text).toContain('2 loads of 2 skills this session:')
   expect(r.text).toContain('commit  (userSettings)')
   expect(r.text).toContain('pdf  (plugin docs-kit)')
@@ -57,7 +61,7 @@ test('a surface with no status line still gets the skill text and the list', asy
   world(on, { statusFails: true })
   const r = await $.skill.prompt({ skill: 'commit', text: 'Write the commit.', source: 'userSettings' })
   expect(r.text).toBe('Write the commit.')
-  const list = await $.command.run({ command: 'skills-used', args: '' })
+  const list = await $.command.run({ command: 'skills-used', args: '', ...RUN })
   expect(list.text).toContain('1 loads of 1 skills')
 })
 
@@ -80,7 +84,7 @@ test('a Skill tool call the engine passed by is still noted (0.1.1)', async ($, 
   const { statuses } = world(on)
   await $.tool.call({ tool: 'Skill', skill: 'icm-ops:icm-verifier', args: 'check' })
   expect(statuses.at(-1)).toBe('skill: icm-ops:icm-verifier (1 this session)')
-  const r = await $.command.run({ command: 'skills-used', args: '' })
+  const r = await $.command.run({ command: 'skills-used', args: '', ...RUN })
   expect(r.text).toContain('icm-ops:icm-verifier  (Skill tool)')
 })
 
@@ -88,7 +92,7 @@ test('one load seen at both doors is one row, the engine note kept', async ($, o
   world(on)
   await $.skill.prompt({ skill: 'icm-verifier', text: 'a', source: 'plugin', pluginName: 'icm-ops' })
   await $.tool.call({ tool: 'Skill', skill: 'icm-ops:icm-verifier' })
-  const r = await $.command.run({ command: 'skills-used', args: '' })
+  const r = await $.command.run({ command: 'skills-used', args: '', ...RUN })
   expect(r.text).toContain('1 loads of 1 skills')
   expect(r.text).toContain('icm-verifier  (plugin icm-ops)')
 })
@@ -98,7 +102,7 @@ test('a refused or failed Skill call and other tools are not noted', async ($, o
   await $.tool.call({ tool: 'Skill', skill: 'secret' })
   await $.tool.call({ tool: 'Skill', skill: 'nosuch' })
   await $.tool.call({ tool: 'Bash', command: 'ls' })
-  const r = await $.command.run({ command: 'skills-used', args: '' })
+  const r = await $.command.run({ command: 'skills-used', args: '', ...RUN })
   expect(r.text).toBe('No skill loaded yet in this session.')
 })
 
