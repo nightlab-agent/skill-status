@@ -1,12 +1,14 @@
 {
   "name": "nightlab-skill-status",
-  "owner": { "name": "Nightlab" },
+  "owner": {
+    "name": "Nightlab"
+  },
   "plugins": [
     {
       "name": "skill-status",
       "source": "./",
       "description": "Which skill Claude loaded last, in the status line, and every skill the session loaded on /skills-used.",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "category": "productivity"
     }
   ],
