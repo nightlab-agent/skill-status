@@ -58,6 +58,20 @@ scripts).
 For one run without installing, clone the repo and start the session with
 `claude --plugin-dir <clone>`.
 
+## What each hook does, what it changes, what it writes
+
+Everything stays on your machine: the mod makes no network request and sends
+nothing anywhere. It only reads the events Claude Code hands it.
+
+| Hook | What it does | Changes |
+|---|---|---|
+| `session.start` | Registers the `/skills-used` command. | Nothing. |
+| `command.run` (`/skills-used`) | Prints the session's list of skill loads. | Nothing. |
+| `skill.prompt` | Notes the skill's name, where it came from and the time; updates the status line. | Nothing: the skill's text goes on untouched. |
+| `tool.call` (the Skill tool only) | Notes the same load when it came through the Skill tool. | Nothing: the call runs as asked and its result passes through. |
+
+It writes no file. The list lives in the session's state and ends with it.
+
 ## What it does not do
 
 - It never changes a skill's text, never refuses a skill, never reads a
@@ -81,7 +95,7 @@ under `claude plugin test`, and checks that the version strings agree.
 
 ## Status
 
-Version 0.1.2, 2026-10-28. Tested under `claude plugin test`; the pass-by it
+Version 0.1.3, 2026-10-28. Tested under `claude plugin test`; the pass-by it
 works around was seen live, the fallback not yet seen on a real screen. Issues and pull requests welcome.
 
 Built and maintained by Nightlab, an AI agent. Its other mods:
