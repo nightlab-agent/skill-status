@@ -1,0 +1,71 @@
+import { expect, test } from 'claude-code/testing'
+
+import { KEEP, listText, statusOf } from './register'
+
+// Each test stands for the engine beneath the plugin: it answers
+// `skill.prompt` with the skill's text, records `$.ui.status`, and reads what
+// the plugin returned. Nothing touches the real file system.
+
+type On = Parameters<Parameters<typeof test>[1]>[1]
+
+const world = (on: On, opts: { statusFails?: boolean } = {}) => {
+  const statuses: (string | undefined)[] = []
+  on('skill.prompt', (_, e) => ({ text: e.text }))
+  on('ui.status', (_, e) => {
+    if (opts.statusFails) throw new Error('no status line here')
+    statuses.push(e.text)
+    return { value: undefined }
+  })
+  on('command.register', () => ({ value: { command: 'skills-used' } }))
+  return { statuses }
+}
+
+test('a loaded skill shows in the status line, its text passed on unchanged', async ($, on) => {
+  const { statuses } = world(on)
+  const r = await $.skill.prompt({ skill: 'commit', text: 'Write the commit.', source: 'userSettings' })
+  expect(r.text).toBe('Write the commit.')
+  expect(statuses.at(-1)).toBe('skill: commit (1 this session)')
+})
+
+test('the count is of distinct skills, the name of the newest load', async ($, on) => {
+  const { statuses } = world(on)
+  await $.skill.prompt({ skill: 'commit', text: 'a', source: 'userSettings' })
+  await $.skill.prompt({ skill: 'review', text: 'b', source: 'projectSettings' })
+  await $.skill.prompt({ skill: 'commit', text: 'c', source: 'userSettings' })
+  expect(statuses.at(-1)).toBe('skill: commit (2 this session)')
+})
+
+test('/skills-used lists every load with where it came from, and says so before any', async ($, on) => {
+  world(on)
+  const empty = await $.command.run({ command: 'skills-used', args: '' })
+  expect(empty.text).toBe('No skill loaded yet in this session.')
+  await $.skill.prompt({ skill: 'commit', text: 'a', source: 'userSettings' })
+  await $.skill.prompt({ skill: 'pdf', text: 'b', source: 'plugin', pluginName: 'docs-kit' })
+  const r = await $.command.run({ command: 'skills-used', args: '' })
+  expect(r.text).toContain('2 loads of 2 skills this session:')
+  expect(r.text).toContain('commit  (userSettings)')
+  expect(r.text).toContain('pdf  (plugin docs-kit)')
+})
+
+test('a surface with no status line still gets the skill text and the list', async ($, on) => {
+  world(on, { statusFails: true })
+  const r = await $.skill.prompt({ skill: 'commit', text: 'Write the commit.', source: 'userSettings' })
+  expect(r.text).toBe('Write the commit.')
+  const list = await $.command.run({ command: 'skills-used', args: '' })
+  expect(list.text).toContain('1 loads of 1 skills')
+})
+
+test('statusOf is empty with no loads, and cut to 80 characters', () => {
+  expect(statusOf([])).toBe(undefined)
+  const long = statusOf([{ at: '2026-10-28T09:00:00Z', skill: 'x'.repeat(120), source: 'userSettings' }])
+  expect(long!.length).toBe(80)
+})
+
+test('listText keeps the order of loads, oldest first', () => {
+  const text = listText([
+    { at: '2026-10-28T09:00:00Z', skill: 'first', source: 'built-in' },
+    { at: '2026-10-28T09:01:00Z', skill: 'second', source: 'mcp' },
+  ])
+  expect(text.indexOf('first')).toBeLessThan(text.indexOf('second'))
+  expect(KEEP).toBe(200)
+})
