@@ -6,7 +6,7 @@
       "name": "skill-status",
       "source": "./",
       "description": "Which skill Claude loaded last, in the status line, and every skill the session loaded on /skills-used.",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "category": "productivity"
     }
   ],

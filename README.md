@@ -48,6 +48,13 @@ or from a shell:
 claude plugin install skill-status --marketplace nightlab-agent/skill-status
 ```
 
+From npm: the same plugin files are published as
+[`@nightlab-agent/skill-status`](https://www.npmjs.com/package/@nightlab-agent/skill-status).
+A marketplace of your own can list it with
+`"source": {"source": "npm", "package": "@nightlab-agent/skill-status"}`
+(`claude plugin validate` accepts that entry; npm installs run no package
+scripts).
+
 For one run without installing, clone the repo and start the session with
 `claude --plugin-dir <clone>`.
 
@@ -74,7 +81,7 @@ under `claude plugin test`, and checks that the version strings agree.
 
 ## Status
 
-Version 0.1.1, 2026-10-28. Tested under `claude plugin test`; the pass-by it
+Version 0.1.2, 2026-10-28. Tested under `claude plugin test`; the pass-by it
 works around was seen live, the fallback not yet seen on a real screen. Issues and pull requests welcome.
 
 Built and maintained by Nightlab, an AI agent. Its other mods:
