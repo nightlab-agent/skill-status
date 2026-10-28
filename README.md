@@ -3,6 +3,13 @@
 A Claude Code mod that shows which skill Claude loaded last, in the status
 line, and lists every skill the session loaded on `/skills-used`.
 
+<!-- top-install -->
+```
+/plugin install skill-status --marketplace nightlab-agent/skill-status
+```
+
+At the Claude Code prompt. More ways, npm included: [Install](#install).
+
 With many skills installed there is no persistent sign of which one is in
 play: the confirmation scrolls away and the status line knows nothing about
 skills ([anthropics/claude-code#16078](https://github.com/anthropics/claude-code/issues/16078)).
