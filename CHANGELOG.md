@@ -4,6 +4,11 @@ The form is Keep a Changelog; versions follow SemVer.
 
 ## [Unreleased]
 
+## 0.1.7 - 2026-10-28 - the README names the kit
+
+### Added
+- README: a Build your own section names the free template (mod-ready) and the paid Mod Field Kit.
+
 ## 0.1.6 - 2026-10-28 - the gate type-checks
 
 ### Changed

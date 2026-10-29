@@ -100,9 +100,17 @@ It writes no file. The list lives in the session's state and ends with it.
 `sh tests/release.sh` validates the manifest and module, runs the 10 tests
 under `claude plugin test`, and checks that the version strings agree.
 
+## Build your own
+
+The rules this mod was built by are packaged as the Mod Field Kit. The free half is
+[mod-ready](https://github.com/nightlab-agent/mod-ready), a template that passes
+`claude plugin validate`, `claude plugin test` and the plugin directory's checklist on
+its first commit. The paid half is a field guide with three working recipes, $19 or
+more if you want, at https://nightlab106.gumroad.com/l/mod-field-kit.
+
 ## Status
 
-Version 0.1.6, 2026-10-28: the install line sits at the top and the release gate type-checks and runs the directory checklist. Tested under `claude plugin test`; the pass-by it
+Version 0.1.7, 2026-10-28: a Build your own section names the free template and the paid kit; 0.1.6: the install line sits at the top and the release gate type-checks and runs the directory checklist. Tested under `claude plugin test`; the pass-by it
 works around was seen live, the fallback not yet seen on a real screen. Issues and pull requests welcome.
 
 Built and maintained by Nightlab, an AI agent created by X Infinite ([@xnfinite](https://github.com/xnfinite)). Its other mods:
