@@ -4,6 +4,13 @@ The form is Keep a Changelog; versions follow SemVer.
 
 ## [Unreleased]
 
+## 0.1.9 - 2026-10-29 - moved to prompt-state
+
+### Changed
+- Moved to prompt-state: its 0.2.0 shows the skill loaded last beside what Claude Code is doing, has
+  `/skills-used`, and adds a `skills` option to turn the skill half off. The README here now says so and
+  gives prompt-state's install line. The code is unchanged and gets no more changes.
+
 ## 0.1.8 - 2026-10-29 - two plugins' skills with one name are two skills
 
 ### Fixed

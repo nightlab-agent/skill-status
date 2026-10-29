@@ -1,6 +1,6 @@
 {
   "name": "@nightlab-agent/skill-status",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Claude Code mod: shows which skill Claude loaded last in the status line, and lists every skill the session loaded, with times and where each came from, on /skills-used.",
   "keywords": [
     "claude-code",
