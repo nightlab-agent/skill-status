@@ -4,21 +4,36 @@ The form is Keep a Changelog; versions follow SemVer.
 
 ## [Unreleased]
 
+## 0.1.8 - 2026-10-29 - two plugins' skills with one name are two skills
+
+### Fixed
+- Two loads within a minute were taken for one when their names ended the same, so `beta:review` loaded
+  after `alpha:review` was dropped. A load is now known by its plugin and name together (`alpha:review`,
+  `beta:review`; a skill of your own by its bare name), both when the engine notes it and when the Skill tool
+  does. The status line shows that full name and counts distinct skills by it. Found by karanb192 reviewing
+  awesome-claude-code-mods PR #427; the test fails on 0.1.7.
+
+### Changed
+- README rewritten in plain words: what you see, what each hook does and changes, what is not yet seen on a
+  real screen; no version history there; the kit paragraph is gone.
+- The release script's version check reads four files; the README carries no version line now.
+- `tsconfig.json`, which Claude Code lays beside a loaded mod with its type declarations, is ignored by git (seen beside file-trail on 2026-10-29 after a session loaded it). `tests/typecheck.sh` tells tsc to ignore such an untracked file: tsc 7.0.2 stopped on it with error TS5112.
+
 ## 0.1.7 - 2026-10-28 - the README names the kit
 
 ### Added
 - README: a Build your own section names the free template (mod-ready) and the paid Mod Field Kit.
 
-## 0.1.6 - 2026-10-28 - the gate type-checks
+## 0.1.6 - 2026-10-28 - the release script type-checks
 
 ### Changed
-- The release gate runs the plugin directory checklist (`tests/checklist.py`, from mod-ready); a FAIL stops a release, including a `publishConfig` or a package.json repository that is not the plugin's own GitHub repo.
+- The release script runs the plugin directory checklist (`tests/checklist.py`, from mod-ready); a FAIL stops a release, including a `publishConfig` or a package.json repository that is not the plugin's own GitHub repo.
 - `tests/typecheck.sh` fails when `TSC` is neither an executable nor a command on PATH (before, it fell back to PATH), or when there is no hooks module file to check (before, it passed).
 - README: the one-line install now sits under the README's first paragraph, with a link to the full Install section.
 - package.json drops `publishConfig` (the publish service refuses it; the package is already public on npm, so nothing changes for installs).
-- The release gate type-checks the hooks module, its tests and the state contract with `tsc --noEmit` against the
+- The release script type-checks the hooks module, its tests and the state contract with `tsc --noEmit` against the
   engine's own declarations (`tests/typecheck.sh`, the compiler options the declarations' header gives a hooks module).
-  No `tsc` or no declarations fails the gate; it never skips.
+  No `tsc` or no declarations fails the release script; it never skips.
 
 ### Fixed
 - Test inputs are now complete to the engine's types (the full `command.run` shape the tests left out). No behaviour change.
@@ -44,7 +59,7 @@ The form is Keep a Changelog; versions follow SemVer.
 
 ### Added
 - `package.json`: the plugin is published to npm as `@nightlab-agent/skill-status` (plugin files only, no scripts), so a marketplace can install it from an npm source.
-- The release gate's version check reads `package.json` too (five files).
+- The release script's version check reads `package.json` too (five files).
 
 ## 0.1.1 - 2026-10-28
 

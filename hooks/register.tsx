@@ -18,7 +18,7 @@ import type { Use } from '../types'
 // runs first and sent the event on past it"), a load called through the Skill
 // tool is still noted at `tool.call`, when the call succeeded. A load noted at
 // both within SAME_LOAD_MS is one row, the `skill.prompt` one kept. A typed
-// `/name` that is passed by has no second door and stays unseen.
+// `/name` that is passed by has no second note and stays unseen.
 //
 // DESIGN NOTE, deliberately narrow: it passes the skill's text on unchanged,
 // never denies, never reads a skill's file, never touches the network, writes
@@ -36,20 +36,23 @@ export const VIA_TOOL = 'Skill tool'
 // Change the tag when Use's fields change: it declines what an earlier version stored.
 const uses = atom({ plugin: 'skill-status', key: 'uses' } as const, [] as Use[], { shape: 'uses-1' })
 
+/** Which skill a load is: `plugin:name` for a plugin's skill, the bare name for one of yours or the
+ * project's. The engine notes a plugin's skill as its name plus the plugin; the Skill tool names it
+ * `plugin:name`. Two plugins' skills with one name (`alpha:review`, `beta:review`) are two skills. */
+export const identityOf = (u: Use) => (u.plugin && !u.skill.startsWith(`${u.plugin}:`) ? `${u.plugin}:${u.skill}` : u.skill)
+
 /** `skill: commit (3 this session)`: the newest load, and how many distinct skills. */
 export const statusOf = (all: Use[]) => {
   const last = all.at(-1)
   if (!last) return undefined
-  const count = new Set(all.map(x => x.skill)).size
-  return `skill: ${last.skill} (${count} this session)`.slice(0, 80)
+  const count = new Set(all.map(identityOf)).size
+  return `skill: ${identityOf(last)} (${count} this session)`.slice(0, 80)
 }
 
-const bare = (name: string) => name.slice(name.lastIndexOf(':') + 1)
-
-/** Adds one note to the list: a second note of the newest skill within SAME_LOAD_MS is the same load. */
+/** Adds one note to the list: a second note of the same skill within SAME_LOAD_MS is the same load. */
 export const noteLoad = (all: Use[], use: Use): Use[] => {
   const last = all.at(-1)
-  if (last && bare(last.skill) === bare(use.skill) && Math.abs(Date.parse(use.at) - Date.parse(last.at)) <= SAME_LOAD_MS) {
+  if (last && identityOf(last) === identityOf(use) && Math.abs(Date.parse(use.at) - Date.parse(last.at)) <= SAME_LOAD_MS) {
     // the engine's own note says more (its source, its plugin); a tool note never replaces it
     return last.source === VIA_TOOL && use.source !== VIA_TOOL ? [...all.slice(0, -1), use] : all
   }
@@ -64,7 +67,7 @@ const hms = (iso: string) => {
 /** The /skills-used answer: one line per load, oldest first; times local to the machine. */
 export const listText = (all: Use[]) => {
   if (all.length === 0) return 'No skill loaded yet in this session.'
-  const names = new Set(all.map(x => x.skill)).size
+  const names = new Set(all.map(identityOf)).size
   const lines = all.map(x => {
     const from = x.plugin ? `plugin ${x.plugin}` : x.source
     return `${hms(x.at)}  ${x.skill}  (${from})`

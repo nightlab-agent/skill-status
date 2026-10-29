@@ -4,7 +4,7 @@ import type { TestBody } from 'claude-code/testing'
 // What the engine stamps on a typed command: the person at the composer.
 const RUN = { origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 100 } } as const
 
-import { KEEP, listText, noteLoad, statusOf } from './register'
+import { identityOf, KEEP, listText, noteLoad, statusOf } from './register'
 
 // Each test stands for the engine beneath the plugin: it answers
 // `skill.prompt` with the skill's text, records `$.ui.status`, and reads what
@@ -88,7 +88,7 @@ test('a Skill tool call the engine passed by is still noted (0.1.1)', async ($, 
   expect(r.text).toContain('icm-ops:icm-verifier  (Skill tool)')
 })
 
-test('one load seen at both doors is one row, the engine note kept', async ($, on) => {
+test('one load seen both ways is one row, the engine note kept', async ($, on) => {
   world(on)
   await $.skill.prompt({ skill: 'icm-verifier', text: 'a', source: 'plugin', pluginName: 'icm-ops' })
   await $.tool.call({ tool: 'Skill', skill: 'icm-ops:icm-verifier' })
@@ -113,4 +113,32 @@ test('noteLoad: a tool note is replaced by a later engine note, and loads a minu
   expect(noteLoad([eng], { ...tool, at: '2026-10-28T09:00:02Z' })).toEqual([eng])
   const later = { ...eng, at: '2026-10-28T09:01:02Z' }
   expect(noteLoad([eng], later).length).toBe(2)
+})
+
+test('two plugins\' skills with one name, loaded within a minute, are two loads of two skills', async ($, on) => {
+  const { statuses } = world(on)
+  await $.skill.prompt({ skill: 'review', text: 'a', source: 'plugin', pluginName: 'alpha' })
+  await $.skill.prompt({ skill: 'review', text: 'b', source: 'plugin', pluginName: 'beta' })
+  expect(statuses.at(-1)).toBe('skill: beta:review (2 this session)')
+  const r = await $.command.run({ command: 'skills-used', args: '', ...RUN })
+  expect(r.text).toContain('2 loads of 2 skills')
+  expect(r.text).toContain('review  (plugin alpha)')
+  expect(r.text).toContain('review  (plugin beta)')
+  // the same two through the Skill tool
+  await $.tool.call({ tool: 'Skill', skill: 'alpha:review' })
+  await $.tool.call({ tool: 'Skill', skill: 'beta:review' })
+  const again = await $.command.run({ command: 'skills-used', args: '', ...RUN })
+  expect(again.text).toContain('4 loads of 2 skills')
+})
+
+test('noteLoad: beta:review 30 seconds after alpha:review stays a load of its own; the same skill twice is one', () => {
+  const alpha = { at: '2026-10-29T09:00:00Z', skill: 'alpha:review', source: 'Skill tool' }
+  const beta = { at: '2026-10-29T09:00:30Z', skill: 'beta:review', source: 'Skill tool' }
+  expect(noteLoad([alpha], beta)).toEqual([alpha, beta])
+  // control: the engine's note of alpha's review, 30 seconds after the tool note, is the same load
+  const alphaEngine = { at: '2026-10-29T09:00:30Z', skill: 'review', source: 'plugin', plugin: 'alpha' }
+  expect(noteLoad([alpha], alphaEngine)).toEqual([alphaEngine])
+  expect(identityOf(alphaEngine)).toBe('alpha:review')
+  expect(identityOf({ at: '', skill: 'alpha:review', source: 'plugin', plugin: 'alpha' })).toBe('alpha:review')
+  expect(identityOf({ at: '', skill: 'commit', source: 'userSettings' })).toBe('commit')
 })

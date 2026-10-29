@@ -8,7 +8,7 @@
       "name": "skill-status",
       "source": "./",
       "description": "Which skill Claude loaded last, in the status line, and every skill the session loaded on /skills-used.",
-      "version": "0.1.7",
+      "version": "0.1.8",
       "category": "productivity"
     }
   ],
